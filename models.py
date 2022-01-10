@@ -1,15 +1,11 @@
+import os
+
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 
-# User*: app_user
-# Password*: Password123!
-# Host: 127.0.0.1 (localhost)
-# Port: 3306
-# Default database: company
-# engine = sqlalchemy.create_engine("mariadb+mariadbconnector://app_user:Password123!@127.0.0.1:3306/company")
-engine = sqlalchemy.create_engine(
-    "mariadb+mariadbconnector://dnr2144:1q2w3e4r!@kang-mariadb1.cbqqc9rvr35n.ap-northeast-2.rds.amazonaws.com:3306/csmoa")
+import secret
 
+engine = sqlalchemy.create_engine(secret.DB_INFO if os.path.isfile('secret.py') else os.environ['DB_INFO'])
 Base = declarative_base()
 
 
