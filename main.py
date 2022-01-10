@@ -27,12 +27,14 @@ if __name__ == '__main__':
     ministop_process.join()
     emart24_process.join()
 
+    crawling_result_message = f"{time.time() - start_time:.5f} sec / crawling finished"
+    print(crawling_result_message)
+
     # cs_crawling.cu_crawling()
     # cs_crawling.gs25_crawling()
     # cs_crawling.seven_eleven_crawling()
     # cs_crawling.ministop_crawling()
     # cs_crawling.emart24_crawling()
 
-    crawling_result_message = f"{time.time() - start_time:.5f} sec / crawling finished"
-    print(crawling_result_message)
+
 

@@ -3,12 +3,13 @@ import platform
 import re
 import time
 
-import selenium
+import sqlalchemy
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 
+import models
 from models import EventItems
 
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
@@ -44,6 +45,10 @@ def cu_crawling():
             'goDepth(\'24\');')
         time.sleep(3)
 
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
+
         # 스크롤 맨 아래까지 내리기
         last_height = driver.execute_script('return document.body.scrollHeight')
         PAUSE_TIME = 2
@@ -71,34 +76,43 @@ def cu_crawling():
                     break
                 last_height = new_height
         except NoSuchElementException as noSuchElementException:  # 모두 스크롤이 됐을 때, element 체크하는 method가 없음
-            os.system(f'echo 1+1 스크롤 완료: {noSuchElementException.msg}') if page_event_type == '1+1' else os.system(
-                f'echo 2+1 스크롤 완료: {noSuchElementException.msg}')
-            print(f'1+1 스크롤 완료: {noSuchElementException.msg}') if page_event_type == '1+1' else print(
-                f'2+1 스크롤 완료: {noSuchElementException.msg}')
+            print(f'({cs}) 1+1 스크롤 완료: {noSuchElementException.msg}') if page_event_type == '1+1' else print(
+                f'({cs}) 2+1 스크롤 완료: {noSuchElementException.msg}')
 
         # start crawling
-        prod_list = driver.find_elements(By.CSS_SELECTOR, '#contents > div.relCon > div.prodListWrap > ul > li')
-        for prod in prod_list:
-            title = prod.find_element(By.CSS_SELECTOR, 'p.prodName').text
-            img_url = prod.find_element(By.CSS_SELECTOR, 'div.photo > a > img').get_attribute('src')
-            price = int(prod.find_element(By.CSS_SELECTOR, 'p.prodPrice').text[:-1].replace(',', ''))
-            discounted_price = round(price / 2) if page_event_type == '1+1' else round(price / 3)
-            event_type = prod.find_element(By.CSS_SELECTOR, 'ul > li').text
+        try:
+            prod_list = driver.find_elements(By.CSS_SELECTOR, '#contents > div.relCon > div.prodListWrap > ul > li')
+            for prod in prod_list:
+                title = prod.find_element(By.CSS_SELECTOR, 'p.prodName').text
+                img_url = prod.find_element(By.CSS_SELECTOR, 'div.photo > a > img').get_attribute('src')
+                price = int(prod.find_element(By.CSS_SELECTOR, 'p.prodPrice').text[:-1].replace(',', ''))
+                discounted_price = round(price / 2) if page_event_type == '1+1' else round(price / 3)
+                event_type = prod.find_element(By.CSS_SELECTOR, 'ul > li').text
 
-            event_item = EventItems(item_name=title, item_price=price, item_actual_price=discounted_price, depth=0,
-                                    image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
-            event_item.save()
+                event_item = EventItems(item_name=title, item_price=price, item_actual_price=discounted_price, depth=0,
+                                        image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
+                session.add(event_item)
+                session.commit()
 
-            print(f'event_item({cs}) = {event_item}')
-            os.system(f'echo event_item({cs}) = {event_item}')
+                print(f'({cs}) event_item = {event_item}')
 
-        print(f'({cs}) 1+1 행사 제품 개수: {len(prod_list)}') if page_event_type == '1+1' else print(
-            f'({cs}) 2+1 행사 제품 개수: {len(prod_list)}')
-        os.system(f'echo ({cs}) 1+1 행사 제품 개수: {len(prod_list)}') if page_event_type == '1+1' else os.system(
-            f'echo ({cs}) 2+1 행사 제품 개수: {len(prod_list)}')
+            print(f'({cs}) 1+1 행사 제품 개수: {len(prod_list)}') if page_event_type == '1+1' else print(
+                f'({cs}) 2+1 행사 제품 개수: {len(prod_list)}')
+            os.system(f'echo ({cs}) 1+1 행사 제품 개수: {len(prod_list)}') if page_event_type == '1+1' else os.system(
+                f'echo ({cs}) 2+1 행사 제품 개수: {len(prod_list)}')
 
-    cu_plus_event_item_crawling("2+1")
+        except NoSuchElementException as noSuchElementException:
+            print(noSuchElementException.msg)
+        except StaleElementReferenceException as staleElementReferenceException:
+            print(staleElementReferenceException.msg)
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
     cu_plus_event_item_crawling("1+1")
+    cu_plus_event_item_crawling("2+1")
     driver.quit()
 
 
@@ -117,13 +131,17 @@ def gs25_crawling():
 
         count = 0
 
-        time.sleep(1)
-        while True:  # 한 페이지에 있는 이벤트 아이템 리스트 가져오기( 한 페이지에 8개 있음. 나중에 바뀔 수도 있음)
-            prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.eventtab > div.tblwrap.mt50 > ul.prod_list')[
-                now_index].find_elements(By.CSS_SELECTOR, 'li')
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
 
-            for prod in prod_list:
-                try:
+        time.sleep(1)
+        try:
+            while True:  # 한 페이지에 있는 이벤트 아이템 리스트 가져오기( 한 페이지에 8개 있음. 나중에 바뀔 수도 있음)
+                prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.eventtab > div.tblwrap.mt50 > ul.prod_list')[
+                    now_index].find_elements(By.CSS_SELECTOR, 'li')
+
+                for prod in prod_list:
                     title = prod.find_element(By.CSS_SELECTOR, 'div.prod_box > p.tit').text
                     img_url = prod.find_element(By.CSS_SELECTOR, 'div.prod_box > p.img > img').get_attribute('src')
                     price = int(
@@ -132,27 +150,33 @@ def gs25_crawling():
                     discounted_price = round(price / 2) if page_event_type == '1+1' else round(price / 3)
                     event_type = prod.find_element(By.CSS_SELECTOR,
                                                    f'div.prod_box > div.flag_box.{page_event_type} > p.flg01').text
-                    # Save in DB
-                    with transaction.atomic():
-                        event_item = EventItems(item_name=title, item_price=price, item_actual_price=discounted_price,
-                                                depth=0, image_url=img_url, category=None, cs_brand=cs,
-                                                event_type=event_type)
-                        event_item.save()
 
+                    # Save in DB
+                    event_item = EventItems(item_name=title, item_price=price, item_actual_price=discounted_price,
+                                            depth=0, image_url=img_url, category=None, cs_brand=cs,
+                                            event_type=event_type)
+                    session.add(event_item)
+                    session.commit()
                     print(f'event_item({cs}) = {event_item}')
 
-                except (selenium.common.exceptions.NoSuchElementException,
-                        selenium.common.exceptions.StaleElementReferenceException):
-                    print('NoSuchElementException!!!')  # 예외가 발생하면 그냥 해당 데이터는 DB에 넣지 말자
+                count += len(prod_list)
+                if len(prod_list) < 8:
+                    print(f'({cs}) 1+1 행사 제품 개수 = {count}') if page_event_type == 'ONE_TO_ONE' else print(
+                        f'({cs}) 2+1 행사 제품 개수 = {count}')
+                    break
 
-            count += len(prod_list)
-            if len(prod_list) < 8:
-                print(f'({cs}) 1+1 행사 제품 개수 =', count) if page_event_type == 'ONE_TO_ONE' else print(
-                    f'({cs}) 2+1 행사 제품 개수 =', count)
-                break
+                driver.execute_script("goodsPageController.moveControl(1)")
+                time.sleep(0.5)
 
-            driver.execute_script("goodsPageController.moveControl(1)")
-            time.sleep(0.5)
+        except NoSuchElementException as noSuchElementException:
+            print(noSuchElementException.msg)
+        except StaleElementReferenceException as staleElementReferenceException:
+            print(staleElementReferenceException.msg)
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     def gs25_gift_event_item_crawling():  # 덤증정 행사 데이터 크롤링
         gift_button = driver.find_element(By.ID, "GIFT")
@@ -161,13 +185,18 @@ def gs25_crawling():
         count = 0
         actions = ActionChains(driver)
 
-        time.sleep(1)
-        while True:  # 한 페이지에 있는 이벤트 아이템 리스트 가져오기( 한 페이지에 8개 있음. 나중에 바뀔 수도 있음)
-            prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.eventtab > div.tblwrap.mt50 > ul.prod_list')[
-                2].find_elements(By.CSS_SELECTOR, 'li')
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
 
-            for prod in prod_list:
-                try:  # 파이썬은 함수 스코프 언어라서, try, while, for, if-else에서 선언된 변수는 스코프를 갖지 않는다.
+        time.sleep(1)
+
+        try:
+            while True:  # 한 페이지에 있는 이벤트 아이템 리스트 가져오기( 한 페이지에 8개 있음. 나중에 바뀔 수도 있음)
+                prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.eventtab > div.tblwrap.mt50 > ul.prod_list')[
+                    2].find_elements(By.CSS_SELECTOR, 'li')
+
+                for prod in prod_list:  # 파이썬은 함수 스코프 언어라서, try, while, for, if-else에서 선언된 변수는 스코프를 갖지 않는다.
                     title = prod.find_element(By.CSS_SELECTOR, 'div.prod_box > p.tit').text
                     img_url = prod.find_element(By.CSS_SELECTOR, 'div.prod_box > p.img > img').get_attribute('src')
                     price = int(
@@ -186,37 +215,48 @@ def gs25_crawling():
                                                   'div.prod_box > div.dum_box > div.dum_txt > p.price').text[
                                 :-1].replace(',', '')
 
-                    with transaction.atomic():
-                        # 행사 상품 + 덤증정 아이템 같이 저장해야 함
-                        event_item = EventItems(item_name=title, item_price=price, item_actual_price=None, depth=0,
-                                                image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
-                        event_item.save()
+                    # Save in DB
+                    event_item = EventItems(item_name=title, item_price=price, item_actual_price=None, depth=0,
+                                            image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
+                    session.add(event_item)
+                    session.flush()  # 일단 DB에 들어가야 ID가 나온다.
+                    # refresh updates given object in the session with its state in the DB
+                    session.refresh(event_item)
 
-                        # 덤 증정 상품 정보(depth = 1)
-                        dum_event_item = EventItems(item_name=dum_title, item_price=dum_price, item_actual_price=None,
-                                                    depth=1, bundle_id=event_item.event_item_id, image_url=dum_img_url,
-                                                    category=None, cs_brand=cs, event_type=event_type)
-                        dum_event_item.save()
+                    event_item.bundle_id = event_item.event_item_id
 
-                    print(f'event_item({cs}) = {event_item}')
-                    print(f'dum_event_item({cs}) = {dum_event_item}')
+                    # 덤 증정 상품 정보(depth = 1)
+                    dum_event_item = EventItems(item_name=dum_title, item_price=dum_price, item_actual_price=None,
+                                                depth=1, bundle_id=event_item.event_item_id, image_url=dum_img_url,
+                                                category=None, cs_brand=cs, event_type=event_type)
+                    session.add(dum_event_item)
 
-                except NoSuchElementException as noSuchElementException:
-                    print(noSuchElementException.msg)
-                except StaleElementReferenceException as staleElementReferenceException:
-                    print(staleElementReferenceException.msg)
+                    print(f'({cs}) event_item = {event_item}')
+                    print(f'({cs}) dum_event_item = {dum_event_item}')
 
-            count += len(prod_list)
-            if len(prod_list) < 8:
-                print('(GS25) 덤증정 행사 제품 개수 =', count)
-                break
+                    session.commit()
 
-            driver.execute_script("goodsPageController.moveControl(1)")
-            time.sleep(2)
+                count += len(prod_list)
+                if len(prod_list) < 8:
+                    print('(GS25) 덤증정 행사 제품 개수 =', count)
+                    break
+
+                driver.execute_script("goodsPageController.moveControl(1)")
+                time.sleep(2)
+
+        except NoSuchElementException as noSuchElementException:
+            print(noSuchElementException.msg)
+        except StaleElementReferenceException as staleElementReferenceException:
+            print(staleElementReferenceException.msg)
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     gs25_plus_event_item_crawling('ONE_TO_ONE')
     gs25_plus_event_item_crawling('TWO_TO_ONE')
-    gs25_gift_event_item_crawling()  # 덤증정
+    gs25_gift_event_item_crawling()  # 덤증정(파라미터 원래 없음)
 
     driver.quit()  # 크롬에서 열려있는 모든 탭 종료
 
@@ -242,6 +282,10 @@ def seven_eleven_crawling():
             driver.execute_script(f'fncTab(\'{DISCOUNT}\');')
         time.sleep(1.5)
 
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
+
         scroll_num = 0
         # 스크롤 맨 아래까지 내리기
         last_height = driver.execute_script('return document.body.scrollHeight')
@@ -256,7 +300,7 @@ def seven_eleven_crawling():
                 if load_more_button is not None:
                     driver.execute_script(f'fncMore({page_type});')  # load more JS function
                     scroll_num += 1
-                    print(f'seven_eleven(page_type: {page_type}) scrolling: {scroll_num}')
+                    print(f'({cs}) (page_type: {page_type}) scrolling: {scroll_num}')
                     time.sleep(2.5)
 
                 # calculate new scroll height and compare with last scroll height
@@ -266,50 +310,62 @@ def seven_eleven_crawling():
                     break
                 last_height = new_height
         except NoSuchElementException as noSuchElementException:  # 모두 스크롤이 됐을 때, element 체크하는 method가 없음
-            print(f'(page_type: {page_type}) 스크롤({scroll_num}) 완료: {noSuchElementException.msg}')
+            print(f'({cs}) (page_type: {page_type}) 스크롤({scroll_num}) 완료: {noSuchElementException.msg}')
 
         # start crawling
-        prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.conSection > div.img_list > #listUl > li')
-        for prod in prod_list:
-            try:  # 맨 처음과 맨 마지막 아이템은 아이템이 아니므로 예외에 걸리고, 나머지 그 사이에 있는 아이템만 가져옴
-                title = prod.find_element(By.CSS_SELECTOR,
-                                          'div.pic_product > div.infowrap > div.name').text  # 맨 처음과 마지막에 예외 발생할 수 있음
-                img_url = prod.find_element(By.CSS_SELECTOR, 'div.pic_product > img').get_attribute('src')
-                price = int(
-                    prod.find_element(By.CSS_SELECTOR, 'div.pic_product > div.infowrap > div.price').text.replace(',',
-                                                                                                                  ''))
-                if page_type == ONE_PLUS_ONE:
-                    discounted_price = round(price / 2)
-                elif page_type == TWO_PLUS_ONE:
-                    discounted_price = round(price / 3)
-                else:
-                    discounted_price = price  # 세븐일레븐은 할인되기 전 원래 가격 제공 안 함.
-                event_type = '가격할인' if page_type == DISCOUNT else prod.find_element(By.CSS_SELECTOR, 'ul > li').text
+        try:
+            prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.conSection > div.img_list > #listUl > li')
+            for prod in prod_list:  # 맨 처음과 맨 마지막 아이템은 아이템이 아니므로 예외에 걸리고, 나머지 그 사이에 있는 아이템만 가져옴
+                try:
+                    title = prod.find_element(By.CSS_SELECTOR,
+                                              'div.pic_product > div.infowrap > div.name').text  # 맨 처음과 마지막에 예외 발생할 수 있음
+                    img_url = prod.find_element(By.CSS_SELECTOR, 'div.pic_product > img').get_attribute('src')
+                    price = int(
+                        prod.find_element(By.CSS_SELECTOR, 'div.pic_product > div.infowrap > div.price').text.replace(
+                            ',',
+                            ''))
+                    if page_type == ONE_PLUS_ONE:
+                        discounted_price = round(price / 2)
+                    elif page_type == TWO_PLUS_ONE:
+                        discounted_price = round(price / 3)
+                    else:
+                        discounted_price = price  # 세븐일레븐은 할인되기 전 원래 가격 제공 안 함.
+                    event_type = '가격할인' if page_type == DISCOUNT else prod.find_element(By.CSS_SELECTOR, 'ul > li').text
 
-                with transaction.atomic():
                     even_item = EventItems(item_name=title, item_price=price, item_actual_price=discounted_price,
                                            depth=0, image_url=img_url, category=None, cs_brand=cs,
                                            event_type=event_type)
-                    even_item.save()
+                    session.add(even_item)
+                    session.commit()
 
-                print(f'event_item({cs}) = {even_item}')
+                    print(f'({cs}) event_item = {even_item}')
 
-            except NoSuchElementException as noSuchElementException:
-                print(noSuchElementException.msg)
-            except StaleElementReferenceException as staleElementReferenceException:
-                print(staleElementReferenceException.msg)
+                except NoSuchElementException as noSuchElementException:
+                    print(noSuchElementException.msg)
+                except StaleElementReferenceException as staleElementReferenceException:
+                    print(staleElementReferenceException.msg)
 
-        if page_type == ONE_PLUS_ONE:
-            print('1+1 행사 제품 개수:', len(prod_list))
-        elif page_type == TWO_PLUS_ONE:
-            print('2+1 행사 제품 개수:', len(prod_list))
-        else:
-            print('할인 행사 제품 개수:', len(prod_list))
+            if page_type == ONE_PLUS_ONE:
+                print(f'({cs}) 1+1 행사 제품 개수: {len(prod_list)}')
+            elif page_type == TWO_PLUS_ONE:
+                print('2+1 행사 제품 개수:', len(prod_list))
+            else:
+                print('할인 행사 제품 개수:', len(prod_list))
+
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     def seven_eleven_gift_event_item_crawling(page_type):  # Seven-Eleven 덤증정 상품 크롤링
         # 증정행사 페이지로 이동
         driver.execute_script(f'fncTab(\'{GIFT}\');')
         time.sleep(1.5)
+
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
 
         scroll_num = 0
         # 스크롤 맨 아래까지 내리기
@@ -339,44 +395,59 @@ def seven_eleven_crawling():
                 f'2+1 스크롤 완료({scroll_num}): {noSuchElementException.msg}')
 
         # start crawling
-        prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.conSection > div.img_list > #listUl > li')
-        for prod in prod_list:
-            try:  # 맨 처음과 맨 마지막 아이템은 아이템이 아니므로 예외에 걸리고, 나머지 그 사이에 있는 아이템만 가져옴
-                title = prod.find_element(By.CSS_SELECTOR,
-                                          'a.btn_product_01 > div.pic_product > div.infowrap > div.name').text
-                img_url = prod.find_element(By.CSS_SELECTOR, 'a.btn_product_01 > div.pic_product > img').get_attribute(
-                    'src')
-                price = int(prod.find_element(By.CSS_SELECTOR,
-                                              'a.btn_product_01 > div.pic_product > div.infowrap > div.price').text.replace(
-                    ',', ''))
-                event_type = '덤증정'
+        try:
+            prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.conSection > div.img_list > #listUl > li')
+            for prod in prod_list:  # 맨 처음과 맨 마지막 아이템은 아이템이 아니므로 예외에 걸리고, 나머지 그 사이에 있는 아이템만 가져옴
+                try:
+                    title = prod.find_element(By.CSS_SELECTOR,
+                                              'a.btn_product_01 > div.pic_product > div.infowrap > div.name').text
+                    img_url = prod.find_element(By.CSS_SELECTOR,
+                                                'a.btn_product_01 > div.pic_product > img').get_attribute(
+                        'src')
+                    price = int(prod.find_element(By.CSS_SELECTOR,
+                                                  'a.btn_product_01 > div.pic_product > div.infowrap > div.price').text.replace(
+                        ',', ''))
+                    event_type = '덤증정'
 
-                dum_title = prod.find_element(By.CSS_SELECTOR,
-                                              'a.btn_product_02 > div.pic_product > div.infowrap > div.name').text
-                dum_img_url = prod.find_element(By.CSS_SELECTOR,
-                                                'a.btn_product_02 > div.pic_product > img').get_attribute('src')
-                dum_price = int(prod.find_element(By.CSS_SELECTOR,
-                                                  'a.btn_product_02 > div.pic_product > div.infowrap > div.price').text.replace(
-                    ',', ''))
+                    dum_title = prod.find_element(By.CSS_SELECTOR,
+                                                  'a.btn_product_02 > div.pic_product > div.infowrap > div.name').text
+                    dum_img_url = prod.find_element(By.CSS_SELECTOR,
+                                                    'a.btn_product_02 > div.pic_product > img').get_attribute('src')
+                    dum_price = int(prod.find_element(By.CSS_SELECTOR,
+                                                      'a.btn_product_02 > div.pic_product > div.infowrap > div.price').text.replace(
+                        ',', ''))
 
-                with transaction.atomic():
                     # 행사 상품 + 덤증정 아이템 같이 저장해야 함
                     event_item = EventItems(item_name=title, item_price=price, item_actual_price=None, depth=0,
                                             image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
-                    event_item.save()
+
+                    session.add(event_item)
+                    session.flush()
+                    session.refresh(event_item)
+
+                    event_item.bundle_id = event_item.event_item_id
 
                     # 덤 증정 상품 정보(depth = 1)
                     dum_event_item = EventItems(item_name=dum_title, item_price=dum_price, item_actual_price=None,
                                                 depth=1, bundle_id=event_item.event_item_id, image_url=dum_img_url,
                                                 category=None, cs_brand=cs, event_type=event_type)
-                    dum_event_item.save()
+                    session.add(dum_event_item)
+                    session.commit()
 
-                print(f'event_item({cs}) = {event_item}')
-                print(f'dum_event_item({cs}) = {dum_event_item}')
+                    print(f'({cs}) 덤 증정 event_item = {event_item}')
 
-            except NoSuchElementException as noSuchElementException:
-                print(noSuchElementException.msg)
-        print(f'덤 증정 행사 제품 개수: {len(prod_list)}')
+                except NoSuchElementException as noSuchElementException:
+                    print(noSuchElementException.msg)
+                except StaleElementReferenceException as staleElementReferenceException:
+                    print(staleElementReferenceException.msg)
+
+            print(f'({cs}) 덤 증정 행사 제품 개수: {len(prod_list)}')
+
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     seven_eleven_plus_and_discount_event_item_crawling(ONE_PLUS_ONE)
     seven_eleven_plus_and_discount_event_item_crawling(TWO_PLUS_ONE)
@@ -407,6 +478,10 @@ def ministop_crawling():
             driver.get(DISCOUNT_HREF)
         time.sleep(1)
 
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
+
         scroll_num = 0
         # 스크롤 맨 아래까지 내리기
         last_height = driver.execute_script('return document.body.scrollHeight')
@@ -421,23 +496,23 @@ def ministop_crawling():
                 if load_more_button is not None:
                     load_more_button.click()
                     scroll_num += 1
-                    print(f'ministop(page_type: {page_type}) scrolling: {scroll_num}')
+                    print(f'({cs}) (page_type: {page_type}) scrolling: {scroll_num}')
                     time.sleep(1)
 
                 # calculate new scroll height and compare with last scroll height
                 new_height = driver.execute_script('return document.body.scrollHeight')
                 if new_height == last_height:
                     print('new_height == last_height')
-                    print(f'ministop(page_type: {page_type}) 스크롤({scroll_num}) 완료')
+                    print(f'({cs}) (page_type: {page_type}) 스크롤({scroll_num}) 완료')
                     break
                 last_height = new_height
         except NoSuchElementException as noSuchElementException:  # 모두 스크롤이 됐을 때, element 체크하는 method가 없음
             print(f'ministop(page_type: {page_type}) 스크롤({scroll_num}) 완료: {noSuchElementException.msg}')
 
         # start crawling
-        prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.inner.wrap.service1 > div.event_plus_list > ul > li')
-        for prod in prod_list:
-            try:
+        try:
+            prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.inner.wrap.service1 > div.event_plus_list > ul > li')
+            for prod in prod_list:
                 title = prod.find_element(By.CSS_SELECTOR, 'a > img').get_attribute('alt')
                 img_url = prod.find_element(By.CSS_SELECTOR, 'a > img').get_attribute('src')
                 origin_price = int(prod.find_elements(By.CSS_SELECTOR, 'a > p > strong')[0].text[:-1].replace(',', '')) \
@@ -454,27 +529,37 @@ def ministop_crawling():
 
                 event_type = prod.find_element(By.CSS_SELECTOR, 'a > span').text
 
-                event_item = EventItems(item_name=title, item_price=origin_price, item_actual_price=discounted_price,
-                                        depth=0,
-                                        image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
-                event_item.save()
+                event_item = EventItems(item_name=title, item_price=origin_price,
+                                        item_actual_price=discounted_price, depth=0, image_url=img_url,
+                                        category=None, cs_brand=cs, event_type=event_type)
+                session.add(event_item)
+                session.commit()
 
-                print(f'event_item({cs}) = {event_item}')
+                print(f'({cs}) event_item = {event_item}')
 
-            except NoSuchElementException as noSuchElementException:
-                print(noSuchElementException.msg)
+            if page_type == ONE_PLUS_ONE_HREF:
+                print('(Ministop) 1+1 행사 제품 개수:', len(prod_list))
+            elif page_type == TWO_PLUS_ONE_HREF:
+                print('(Ministop) 2+1 행사 제품 개수:', len(prod_list))
+            else:
+                print('(Ministop) 할인 행사 제품 개수:', len(prod_list))
 
-        if page_type == ONE_PLUS_ONE_HREF:
-            print('(Ministop) 1+1 행사 제품 개수:', len(prod_list))
-        elif page_type == TWO_PLUS_ONE_HREF:
-            print('(Ministop) 2+1 행사 제품 개수:', len(prod_list))
-        else:
-            print('(Ministop) 할인 행사 제품 개수:', len(prod_list))
+        except NoSuchElementException as noSuchElementException:
+            print(noSuchElementException.msg)
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     def ministop_gift_event_item_crawling(page_type):  # 미니스톱 덤증정
         # 덤 증정 페이지로 이동
         driver.get(page_type)
         time.sleep(1)
+
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
 
         scroll_num = 0
         # 스크롤 맨 아래까지 내리기
@@ -503,9 +588,9 @@ def ministop_crawling():
             print(f'ministop(page_type: {page_type}) 스크롤({scroll_num}) 완료: {noSuchElementException.msg}')
 
         # start crawling
-        prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.inner.wrap.service1 > div.event_add_list > ul > li')
-        for prod in prod_list:
-            try:
+        try:
+            prod_list = driver.find_elements(By.CSS_SELECTOR, 'div.inner.wrap.service1 > div.event_add_list > ul > li')
+            for prod in prod_list:
                 title = prod.find_element(By.CSS_SELECTOR, 'a > div.add_left > img').get_attribute('alt')
                 img_url = prod.find_element(By.CSS_SELECTOR, 'a > div.add_left > img').get_attribute('src')
                 origin_price = int(
@@ -517,27 +602,37 @@ def ministop_crawling():
                 dum_origin_price = int(
                     prod.find_element(By.CSS_SELECTOR, 'a > div.add_right > p > strong').text.replace(',', ''))
 
-                with transaction.atomic():
-                    # 행사 상품 + 덤증정 아이템 같이 저장해야 함
-                    event_item = EventItems(item_name=title, item_price=origin_price, item_actual_price=None, depth=0,
-                                            image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
-                    event_item.save()
+                # 행사 상품 + 덤증정 아이템 같이 저장해야 함
+                event_item = EventItems(item_name=title, item_price=origin_price,
+                                        item_actual_price=discounted_price, depth=0,
+                                        image_url=img_url, category=None, cs_brand=cs, event_type=event_type)
+                session.add(event_item)
+                session.flush()
+                session.refresh(event_item)
 
-                    # 덤 증정 상품 정보(depth = 1)
-                    dum_event_item = EventItems(item_name=dum_title, item_price=dum_origin_price,
-                                                item_actual_price=None, depth=1,
-                                                bundle_id=event_item.event_item_id,
-                                                image_url=dum_img_url, category=None, cs_brand=cs,
-                                                event_type=event_type)
-                    dum_event_item.save()
+                event_item.bundle_id = event_item.event_item_id
 
-                print(f'event_item({cs}) = {event_item}')
-                print(f'dum_event_item({cs}) = {dum_event_item}')
+                # 덤 증정 상품 정보(depth = 1)
+                dum_event_item = EventItems(item_name=dum_title, item_price=dum_origin_price,
+                                            item_actual_price=discounted_price, depth=1,
+                                            bundle_id=event_item.event_item_id,
+                                            image_url=dum_img_url, category=None, cs_brand=cs,
+                                            event_type=event_type)
+                session.add(dum_event_item)
+                session.commit()
 
-            except NoSuchElementException as noSuchElementException:
-                print(noSuchElementException.msg)
+                print(f'({cs}) event_item = {event_item}')
+                print(f'({cs}) dum_event_item({cs}) = {dum_event_item}')
 
-        print(f'(Ministop) 덤 증정 행사 상품 개수: {len(prod_list)}')
+            print(f'(Ministop) 덤 증정 행사 상품 개수: {len(prod_list)}')
+
+        except NoSuchElementException as noSuchElementException:
+            print(noSuchElementException.msg)
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     ministop_plus_and_discount_event_item_crawling(ONE_PLUS_ONE_HREF)
     ministop_plus_and_discount_event_item_crawling(TWO_PLUS_ONE_HREF)
@@ -563,6 +658,10 @@ def emart24_crawling():
         # 1+1 | 2+1 | 3+1 | 할인행사 페이지로 이동
         driver.execute_script(page_type_script)
         time.sleep(1)
+
+        # Create a session
+        Session = sqlalchemy.orm.sessionmaker(bind=models.engine, autoflush=True, autocommit=False)
+        session = Session()
 
         # 몇 페이지까지 있는지 가져오기 (아이템이 없을 때 어떻게 예외 처리를 해야 할지..)
         try:
@@ -614,43 +713,54 @@ def emart24_crawling():
                         origin_title = title.split('_')[0]
                         dum_title = title.split('_')[1]
 
-                        with transaction.atomic():
-                            event_item = EventItems(item_name=origin_title, item_price=origin_price,
-                                                    item_actual_price=None,
-                                                    depth=0, image_url=img_url, category=None,
-                                                    cs_brand=cs, event_type=event_type)
-                            event_item.save()
-                            # emart24는 덤 증정 상품 정보 item title밖에 제공 안 함.
-                            event_item = EventItems(item_name=dum_title, item_price=None, item_actual_price=None,
+                        event_item = EventItems(item_name=origin_title, item_price=origin_price,
+                                                item_actual_price=None,
+                                                depth=0, image_url=img_url, category=None,
+                                                cs_brand=cs, event_type=event_type)
+                        session.add(event_item)
+                        session.flush()
+                        session.refresh(event_item)
+
+                        event_item.bundle_id = event_item.event_item_id
+
+                        # emart24는 덤 증정 상품 정보 item title밖에 제공 안 함.
+                        dum_event_item = EventItems(item_name=dum_title, item_price=None, item_actual_price=None,
                                                     depth=1, bundle_id=event_item.event_item_id,
                                                     image_url=None, category=None, cs_brand=cs, event_type=event_type)
-                            event_item.save()
+                        session.add(dum_event_item)
+                        print(f'({cs}) event_item = {event_item}')
+                        print(f'({cs}) dum_event_item = {dum_event_item}')
                     else:
-                        with transaction.atomic():
-                            event_item = EventItems(item_name=title, item_price=origin_price,
-                                                    item_actual_price=discounted_price, depth=0, image_url=img_url,
-                                                    category=None, cs_brand=cs, event_type=event_type)
-                            event_item.save()
+                        event_item = EventItems(item_name=title, item_price=origin_price,
+                                                item_actual_price=discounted_price, depth=0, image_url=img_url,
+                                                category=None, cs_brand=cs, event_type=event_type)
+                        session.add(event_item)
+                        print(f'({cs}) event_item = {event_item}')
 
-                    print(f'event_item({cs}) = {event_item}')
+                    session.commit()
 
                 total_event_item = total_event_item + len(prod_list)
 
                 driver.execute_script(f'goPage(\'{i + 1}\')')
                 time.sleep(1)
             if page_type_script == ONE_PLUS_ONE_SCRIPT:
-                print('(Emart24) 1+1 행사 제품 개수:', total_event_item)
+                print(f'({cs}) 1+1 행사 제품 개수: {total_event_item}')
             elif page_type_script == TWO_PLUS_ONE_SCRIPT:
-                print('(Emart24) 2+1 행사 제품 개수:', total_event_item)
+                print(f'({cs}) 2+1 행사 제품 개수: {total_event_item}')
             elif page_type_script == THREE_PLUS_ONE_SCRIPT:
-                print('(Emart24) 3+1 행사 제품 개수:', total_event_item)
+                print(f'({cs}) 3+1 행사 제품 개수: {total_event_item}')
             else:
-                print('(Emart24) 할인 행사 제품 개수:', total_event_item)
+                print(f'({cs}) 할인 행사 제품 개수: {total_event_item}')
 
         except ValueError as valueError:
             print(f'ValueError: {valueError}')
         except NoSuchElementException as noSuchElementException:
             print(noSuchElementException.msg)
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     emart24_crawling_details(ONE_PLUS_ONE_SCRIPT)
     emart24_crawling_details(TWO_PLUS_ONE_SCRIPT)
