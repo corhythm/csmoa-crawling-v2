@@ -3,7 +3,6 @@ import os
 import sqlalchemy
 from sqlalchemy.orm import declarative_base
 
-import secret
 try:
     import secret
 except ModuleNotFoundError:
