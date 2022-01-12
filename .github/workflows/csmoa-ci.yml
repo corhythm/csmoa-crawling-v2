@@ -25,7 +25,8 @@ jobs:
         sudo apt-get update
         sudo chmod 777 chromedriver
         sudo apt-get install -y chromium-browser
-        python -m pip install --upgrade pip        
+        python -m pip install --upgrade pip
+        pip install mariadb
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Start Crawling
       run: |
