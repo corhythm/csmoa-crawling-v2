@@ -1,7 +1,7 @@
 import os
 
 import sqlalchemy
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 import secret
 
@@ -11,7 +11,6 @@ Base = declarative_base()
 
 class EventItems(Base):
     __tablename__ = 'event_items'
-
     event_item_id = sqlalchemy.Column(sqlalchemy.BigInteger, primary_key=True, autoincrement=True)
     item_name = sqlalchemy.Column(sqlalchemy.String(length=100), nullable=False)
     item_price = sqlalchemy.Column(sqlalchemy.Integer)
@@ -36,70 +35,6 @@ class EventItems(Base):
                f'updated_at: {self.updated_at}, status: {self.status}}}'
 
 
-# class Employee(Base):  # test table
-#     __tablename__ = 'employees'
-#     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-#     firstname = sqlalchemy.Column(sqlalchemy.String(length=100))
-#     lastname = sqlalchemy.Column(sqlalchemy.String(length=100))
-#     active = sqlalchemy.Column(sqlalchemy.Boolean, default=True)
-#     created_at = sqlalchemy.Column(sqlalchemy.TIMESTAMP, nullable=False, server_default=sqlalchemy.sql.func.now())
+# Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
-
-# 메타 데이터에 있는 테이블 생성
-Base.metadata.create_all(engine)
-
-# def add_employee(first_name, last_name):
-#     newEmployee = Employee(firstname=first_name, lastname=last_name)
-#     session.add(newEmployee)  # add하면 flush가 자동으로 됨
-#     session.commit()
-#
-#
-# def select_all():
-#     employees = session.query(Employee).all()
-#     for employee in employees:
-#         print(" - " + employee.firstname + ' ' + employee.lastname)
-#
-#
-# def select_by_status(is_active):
-#     employees = session.query(Employee).filter_by(active=is_active)
-#     for employee in employees:
-#         print(" - " + employee.firstname + ' ' + employee.lastname)
-#
-#
-# def update_employee_status(id, is_active):
-#     employee = session.query(Employee).get(id)
-#     employee.active = is_active
-#     session.commit()
-#
-#
-# def delete_employee(id):
-#     session.query(Employee).filter(Employee.id == id).delete()
-#     session.commit()
-#
-#
-# def temp_test():
-#     # Add some new employees
-#     add_employee("Bruce", "Wayne")
-#     add_employee("Diana", "Prince")
-#     add_employee("Clark", "Kent")
-#
-#     # Show all employees
-#     print('All Employees')
-#     select_all()
-#     print("----------------")
-#
-#     # Update employee status
-#     update_employee_status(2, False)
-#
-#     # Show active employees
-#     print('Active Employees')
-#     select_by_status(True)
-#     print("----------------")
-#
-#     # Delete employee
-#     delete_employee(1)
-#
-#     # Show all employees
-#     print('All Employees')
-#     select_all()
-#     print("----------------")

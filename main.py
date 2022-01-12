@@ -1,32 +1,45 @@
+import os
+import platform
+from _datetime import datetime
 import multiprocessing
 import time
 
+from pytz import timezone
+
 import cs_crawling
+from github_utils import get_github_repo, upload_github_issue
 
 if __name__ == '__main__':
     start_time = time.time()
 
     multiprocessing.set_start_method('spawn')
-    cu_process = multiprocessing.Process(target=cs_crawling.cu_crawling)
-    gs25_process = multiprocessing.Process(target=cs_crawling.gs25_crawling)
-    seven_eleven_process = multiprocessing.Process(target=cs_crawling.seven_eleven_crawling)
-    ministop_process = multiprocessing.Process(target=cs_crawling.ministop_crawling)
-    emart24_process = multiprocessing.Process(target=cs_crawling.emart24_crawling)
+    manager = multiprocessing.Manager()
+    ret_dict = manager.dict()
+    css = {'cu': cs_crawling.cu_crawling, 'gs25': cs_crawling.gs25_crawling,
+           'seven_eleven: ': cs_crawling.seven_eleven_crawling, 'ministop': cs_crawling.ministop_crawling,
+           'emart24': cs_crawling.emart24_crawling}  # Convenience Stores
+    # css = {'ministop': cs_crawling.ministop_crawling}  # test
+    jobs = []
 
-    # start processes
-    cu_process.start()
-    gs25_process.start()
-    seven_eleven_process.start()
-    ministop_process.start()
-    emart24_process.start()
+    for cs_key in css.keys():
+        process = multiprocessing.Process(target=css[cs_key], args=[cs_key, ret_dict])
+        jobs.append(process)
+        process.start()
 
-    # join processes
-    cu_process.join()
-    gs25_process.join()
-    seven_eleven_process.join()
-    ministop_process.join()
-    emart24_process.join()
+    for process in jobs:
+        process.join()
 
+    if platform.system() != 'Windows':  # 깃허브 이슈에 업로드(깃허브 액션에서 실행될 경우에만 실행)
+        access_token = os.environ['MY_GITHUB_TOKEN']
+        repository_name = 'csmoa-crawling-v2'
+        seoul_timezone = timezone('Asia/Seoul')
+        today = datetime.now(seoul_timezone).strftime('%Y년 %m월 %d일 %H:%M:%S')
+
+        issue_title = f'(CU, GS25, MINISTOP, SEVEN-ELEVEN, Emart24) 행사상품 알림({today})'
+        repository = get_github_repo(access_token, repository_name)
+        upload_github_issue(repository, issue_title, '')
+
+    print(ret_dict.values())
     crawling_result_message = f"{time.time() - start_time:.5f} sec / crawling finished"
     print(crawling_result_message)
 
@@ -35,6 +48,3 @@ if __name__ == '__main__':
     # cs_crawling.seven_eleven_crawling()
     # cs_crawling.ministop_crawling()
     # cs_crawling.emart24_crawling()
-
-
-
