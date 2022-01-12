@@ -25,12 +25,11 @@ jobs:
         python3 -V
         python -V
         sudo apt-get update -y
-        sudo apt-get install -y libmariadb3
-        sudo apt-get install -y libmariadb-dev
-        sudo chmod 777 chromedriver
-        sudo apt-get install -y chromium-browser
+        sudo apt-get install -y libmariadb3 libmariadb-dev gcc
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        sudo chmod 777 chromedriver
+        sudo apt-get install -y chromium-browser
     - name: Start Crawling
       run: |
         python main.py
