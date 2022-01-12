@@ -1,4 +1,4 @@
-
+mariadb==1.0.9
 selenium==4.1.0
 SQLAlchemy==1.4.29
 pytz==2021.3
