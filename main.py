@@ -10,6 +10,7 @@ import cs_crawling
 from github_utils import get_github_repo, upload_github_issue
 
 if __name__ == '__main__':
+    print('Start Crawling!')
     start_time = time.time()
 
     multiprocessing.set_start_method('spawn')
