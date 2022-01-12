@@ -16,16 +16,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.9
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: "3.10"
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo chmod 777 chromedriver
         sudo apt-get install -y chromium-browser
         python -m pip install --upgrade pip
+        pip install pytz
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Start Crawling
       run: |
