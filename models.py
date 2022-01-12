@@ -4,6 +4,11 @@ import sqlalchemy
 from sqlalchemy.orm import declarative_base
 
 import secret
+try:
+    import secret
+except ModuleNotFoundError:
+    # Error handling
+    pass
 
 engine = sqlalchemy.create_engine(secret.DB_INFO if os.path.isfile('secret.py') else os.environ['DB_INFO'])
 Base = declarative_base()
