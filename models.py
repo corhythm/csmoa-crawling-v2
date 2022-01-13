@@ -39,6 +39,8 @@ class EventItems(Base):
                f'updated_at: {self.updated_at}, status: {self.status}}}'
 
 
-# Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(bind=engine)
-
+try:  # After table dropped, create table
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+except:
+    pass
