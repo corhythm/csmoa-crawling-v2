@@ -38,7 +38,8 @@ if __name__ == '__main__':
 
         issue_title = f'(CU, GS25, MINISTOP, SEVEN-ELEVEN, Emart24) 행사상품 알림({today})'
         repository = get_github_repo(access_token, repository_name)
-        upload_github_issue(repository, issue_title, '')
+        upload_body = ''.join(ret_dict.values())
+        upload_github_issue(repository=repository, title=issue_title, body=upload_body)
 
     print(ret_dict.values())
     crawling_result_message = f"{time.time() - start_time:.5f} sec / crawling finished"

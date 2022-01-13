@@ -134,7 +134,7 @@ def cu_crawling(cs, ret_dict):
                     driver.execute_script('nextPage(1);')
                     if PAUSE_TIME <= 20:
                         PAUSE_TIME += 1.5
-                    print(f'cu one_or_two_plus_one scrolling: {scroll_num}')
+                    print(f'{cs} one_or_two_plus_one scrolling: {scroll_num}')
                     scroll_num += 1
                     print('PAUSE_TIME =', PAUSE_TIME)
                     time.sleep(2) if page_event_type == '1+1' else time.sleep(PAUSE_TIME)
@@ -146,8 +146,8 @@ def cu_crawling(cs, ret_dict):
                     break
                 last_height = new_height
         except NoSuchElementException as noSuchElementException:  # 모두 스크롤이 됐을 때, element 체크하는 method가 없음
-            print(f'({cs}) 1+1 스크롤 완료: {noSuchElementException.msg}') if page_event_type == '1+1' else print(
-                f'({cs}) 2+1 스크롤 완료: {noSuchElementException.msg}')
+            print(f'{cs} 1+1 스크롤 완료: {noSuchElementException.msg}') if page_event_type == '1+1' else print(
+                f'{cs} 2+1 스크롤 완료: {noSuchElementException.msg}')
 
         # start crawling
         try:
@@ -166,14 +166,14 @@ def cu_crawling(cs, ret_dict):
                 session.commit()
                 event_items.append(event_item)
 
-                print(f'({cs}) event_item = {event_item}')
+                print(f'{cs} event_item = {event_item}')
 
-            print(f'({cs}) 1+1 행사 제품 개수: {len(event_items)}') if page_event_type == '1+1' else print(
-                f'({cs}) 2+1 행사 제품 개수: {len(event_items)}')
+            print(f'{cs} 1+1 행사 제품 개수: {len(event_items)}') if page_event_type == '1+1' else print(
+                f'{cs} 2+1 행사 제품 개수: {len(event_items)}')
 
             ret_str_list.append(
-                f'({cs}) 1+1 행사 제품 개수: {len(event_items)}\n') if page_event_type == '1+1' else ret_str_list.append(
-                f'({cs}) 2+1 행사 제품 개수: {len(event_items)}\n')
+                f'{cs} 1+1 행사 제품 개수: {len(event_items)}\n') if page_event_type == '1+1' else ret_str_list.append(
+                f'{cs} 2+1 행사 제품 개수: {len(event_items)}\n')
 
             extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
 
@@ -189,7 +189,7 @@ def cu_crawling(cs, ret_dict):
 
     cu_plus_event_item_crawling("1+1")
     cu_plus_event_item_crawling("2+1")
-    ret_str_list.append(f'----------------------------<{cs}>----------------------------')
+    ret_str_list.append(f'----------------------------{cs} End----------------------------\n\n')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -238,7 +238,9 @@ def gs25_crawling(cs, ret_dict):
                     session.add(event_item)
                     session.commit()
                     event_items.append(event_item)
-                    print(f'event_item({cs}) = {event_item}')
+                    print(f'{cs} 1+1 event_item = {event_item}') if page_event_type == 'ONE_TO_ONE' else print(
+                        f'{cs} 2+1 event_item = {event_item}'
+                    )
 
                 if len(prod_list) < 8:
                     break
@@ -246,11 +248,11 @@ def gs25_crawling(cs, ret_dict):
                 driver.execute_script("goodsPageController.moveControl(1)")
                 time.sleep(0.5)
 
-            print(f'({cs}) 1+1 행사 제품 개수 = {len(event_items)}') if page_event_type == 'ONE_TO_ONE' else print(
-                f'({cs}) 2+1 행사 제품 개수 = {len(event_items)}')
+            print(f'{cs} 1+1 행사 제품 개수 = {len(event_items)}') if page_event_type == 'ONE_TO_ONE' else print(
+                f'{cs} 2+1 행사 제품 개수 = {len(event_items)}')
             ret_str_list.append(
-                f'({cs}) 1+1 행사 제품 개수: {len(event_items)}\n') if page_event_type == '1+1' else ret_str_list.append(
-                f'({cs}) 2+1 행사 제품 개수: {len(event_items)}\n')
+                f'{cs} 1+1 행사 제품 개수: {len(event_items)}\n') if page_event_type == '1+1' else ret_str_list.append(
+                f'{cs} 2+1 행사 제품 개수: {len(event_items)}\n')
 
             extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
 
@@ -324,8 +326,8 @@ def gs25_crawling(cs, ret_dict):
                     event_items.append(event_item)
                     dum_event_items.append(dum_event_item)
 
-                    print(f'({cs}) event_item = {event_item}')
-                    print(f'({cs}) dum_event_item = {dum_event_item}')
+                    print(f'{cs} event_item = {event_item}')
+                    print(f'{cs} dum_event_item = {dum_event_item}')
 
                 if len(prod_list) < 8:
                     break
@@ -333,8 +335,8 @@ def gs25_crawling(cs, ret_dict):
                 driver.execute_script("goodsPageController.moveControl(1)")
                 time.sleep(2)
 
-            print(f'({cs}) 덤증정 행사 상품 개수: {len(dum_event_items)}')
-            ret_str_list.append(f'({cs}) 덤 증정 행사 상품 개수: {len(dum_event_items)}\n')
+            print(f'{cs} 덤증정 행사 상품 개수: {len(dum_event_items)}')
+            ret_str_list.append(f'{cs} 덤 증정 행사 상품 개수: {len(dum_event_items)}\n')
             extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items, dum_event_items=dum_event_items)
 
         except NoSuchElementException as noSuchElementException:
@@ -351,7 +353,7 @@ def gs25_crawling(cs, ret_dict):
     gs25_plus_event_item_crawling('TWO_TO_ONE')
     gs25_gift_event_item_crawling()  # 덤증정(파라미터 원래 없음)
 
-    ret_str_list.append(f'----------------------------<{cs}>----------------------------')
+    ret_str_list.append(f'----------------------------{cs} End----------------------------\n\n')
     ret_dict[cs] = ''.join(ret_str_list)
 
     driver.quit()  # 크롬에서 열려있는 모든 탭 종료
@@ -399,7 +401,7 @@ def seven_eleven_crawling(cs, ret_dict):
                 if load_more_button is not None:
                     driver.execute_script(f'fncMore({page_type});')  # load more JS function
                     scroll_num += 1
-                    print(f'({cs}) (page_type: {page_type}) scrolling: {scroll_num}')
+                    print(f'{cs} (page_type: {page_type}) scrolling: {scroll_num}')
                     time.sleep(2.5)
 
                 # calculate new scroll height and compare with last scroll height
@@ -409,7 +411,7 @@ def seven_eleven_crawling(cs, ret_dict):
                     break
                 last_height = new_height
         except NoSuchElementException as noSuchElementException:  # 모두 스크롤이 됐을 때, element 체크하는 method가 없음
-            print(f'({cs}) (page_type: {page_type}) 스크롤({scroll_num}) 완료: {noSuchElementException.msg}')
+            print(f'{cs} (page_type: {page_type}) 스크롤({scroll_num}) 완료: {noSuchElementException.msg}')
 
         # start crawling
         try:
@@ -438,7 +440,7 @@ def seven_eleven_crawling(cs, ret_dict):
                     session.commit()
                     event_items.append(event_item)
 
-                    print(f'({cs}) event_item = {event_item}')
+                    print(f'{cs} event_item = {event_item}')
 
                 except NoSuchElementException as noSuchElementException:
                     print(noSuchElementException.msg)
@@ -446,14 +448,14 @@ def seven_eleven_crawling(cs, ret_dict):
                     print(staleElementReferenceException.msg)
 
             if page_type == ONE_PLUS_ONE:
-                print(f'({cs}) 1+1 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 1+1 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 1+1 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 1+1 행사 제품 개수: {len(event_items)}\n')
             elif page_type == TWO_PLUS_ONE:
-                print(f'({cs}) 2+1 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 2+1 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 2+1 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 2+1 행사 제품 개수: {len(event_items)}\n')
             else:
-                print(f'({cs}) 할인 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 할인 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 할인 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 할인 행사 제품 개수: {len(event_items)}\n')
 
             extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
 
@@ -545,14 +547,14 @@ def seven_eleven_crawling(cs, ret_dict):
                     event_items.append(event_item)
                     dum_event_items.append(dum_event_item)
 
-                    print(f'({cs}) 덤 증정 행사 event_item = {event_item}, dum_event_item = {dum_event_item}')
+                    print(f'{cs} 덤 증정 행사 event_item = {event_item}, dum_event_item = {dum_event_item}')
 
                 except NoSuchElementException as noSuchElementException:
                     print(noSuchElementException.msg)
                 except StaleElementReferenceException as staleElementReferenceException:
                     print(staleElementReferenceException.msg)
 
-            print(f'({cs}) 덤 증정 행사 제품 개수: {len(event_items)}')
+            print(f'{cs} 덤 증정 행사 제품 개수: {len(event_items)}')
             extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items, dum_event_items=dum_event_items)
 
         except:
@@ -566,7 +568,7 @@ def seven_eleven_crawling(cs, ret_dict):
     seven_eleven_gift_event_item_crawling(GIFT)
     seven_eleven_plus_and_discount_event_item_crawling(DISCOUNT)
 
-    ret_str_list.append(f'----------------------------<{cs}>----------------------------')
+    ret_str_list.append(f'----------------------------{cs} End----------------------------')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -613,14 +615,14 @@ def ministop_crawling(cs, ret_dict):
                 if load_more_button is not None:
                     load_more_button.click()
                     scroll_num += 1
-                    print(f'({cs}) (page_type: {page_type}) scrolling: {scroll_num}')
+                    print(f'{cs} (page_type: {page_type}) scrolling: {scroll_num}')
                     time.sleep(1)
 
                 # calculate new scroll height and compare with last scroll height
                 new_height = driver.execute_script('return document.body.scrollHeight')
                 if new_height == last_height:
                     print('new_height == last_height')
-                    print(f'({cs}) (page_type: {page_type}) 스크롤({scroll_num}) 완료')
+                    print(f'{cs} (page_type: {page_type}) 스크롤({scroll_num}) 완료')
                     break
                 last_height = new_height
         except NoSuchElementException as noSuchElementException:  # 모두 스크롤이 됐을 때, element 체크하는 method가 없음
@@ -653,17 +655,17 @@ def ministop_crawling(cs, ret_dict):
                 session.commit()
                 event_items.append(event_item)
 
-                print(f'({cs}) event_item = {event_item}')
+                print(f'{cs} event_item = {event_item}')
 
             if page_type == ONE_PLUS_ONE_HREF:
-                print(f'({cs}) 1+1 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 1+1 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 1+1 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 1+1 행사 제품 개수: {len(event_items)}\n')
             elif page_type == TWO_PLUS_ONE_HREF:
-                print(f'({cs}) 2+1 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 2+1 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 2+1 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 2+1 행사 제품 개수: {len(event_items)}\n')
             else:
-                print(f'({cs}) 할인 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 할인 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 할인 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 할인 행사 제품 개수: {len(event_items)}\n')
 
             extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
 
@@ -750,11 +752,11 @@ def ministop_crawling(cs, ret_dict):
                 event_items.append(event_item)
                 dum_event_items.append(dum_event_item)
 
-                print(f'({cs}) event_item = {event_item}')
-                print(f'({cs}) dum_event_item({cs}) = {dum_event_item}')
+                print(f'{cs} event_item = {event_item}')
+                print(f'{cs} dum_event_item = {dum_event_item}')
 
-            print(f'({cs}) 덤 증정 행사 상품 개수: {len(dum_event_items)}')
-            ret_str_list.append(f'({cs}) 덤 증정 행사 상품 개수: {len(dum_event_items)}\n')
+            print(f'{cs} 덤 증정 행사 상품 개수: {len(dum_event_items)}')
+            ret_str_list.append(f'{cs} 덤 증정 행사 상품 개수: {len(dum_event_items)}\n')
             extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items, dum_event_items=dum_event_items)
 
         except NoSuchElementException as noSuchElementException:
@@ -770,7 +772,7 @@ def ministop_crawling(cs, ret_dict):
     ministop_plus_and_discount_event_item_crawling(DISCOUNT_HREF)
     ministop_gift_event_item_crawling(GIFT_HREF)
 
-    ret_str_list.append(f'----------------------------<{cs}>----------------------------')
+    ret_str_list.append(f'----------------------------{cs} End----------------------------')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -867,15 +869,15 @@ def emart24_crawling(cs, ret_dict):
                         event_items.append(event_item)
                         dum_event_items.append(dum_event_item)
 
-                        print(f'({cs}) event_item = {event_item}')
-                        print(f'({cs}) dum_event_item = {dum_event_item}')
+                        print(f'{cs} event_item = {event_item}')
+                        print(f'{cs} dum_event_item = {dum_event_item}')
                     else:
                         event_item = EventItems(item_name=title, item_price=origin_price,
                                                 item_actual_price=discounted_price, depth=0, image_url=img_url,
                                                 category=None, cs_brand=cs, event_type=event_type)
                         session.add(event_item)
                         event_items.append(event_item)
-                        print(f'({cs}) event_item = {event_item}')
+                        print(f'{cs} event_item = {event_item}')
 
                     session.commit()
 
@@ -883,24 +885,24 @@ def emart24_crawling(cs, ret_dict):
                 time.sleep(1)
 
             if page_type_script == ONE_PLUS_ONE_SCRIPT:
-                print(f'({cs}) 1+1 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 1+1 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 1+1 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 1+1 행사 제품 개수: {len(event_items)}\n')
                 extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
             elif page_type_script == TWO_PLUS_ONE_SCRIPT:
-                print(f'({cs}) 2+1 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 2+1 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 2+1 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 2+1 행사 제품 개수: {len(event_items)}\n')
                 extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
             elif page_type_script == THREE_PLUS_ONE_SCRIPT:
-                print(f'({cs}) 3+1 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 3+1 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 3+1 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 3+1 행사 제품 개수: {len(event_items)}\n')
                 extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
             elif page_type_script == GIFT_HREF:
-                print(f'({cs}) 3+1 행사 제품 개수: {len(dum_event_items)}')
-                ret_str_list.append(f'({cs}) 덩증정 행사 제품 개수: {len(dum_event_items)}\n')
+                print(f'{cs} 3+1 행사 제품 개수: {len(dum_event_items)}')
+                ret_str_list.append(f'{cs} 덩증정 행사 제품 개수: {len(dum_event_items)}\n')
                 extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items, dum_event_items=dum_event_items)
             else:
-                print(f'({cs}) 할인 행사 제품 개수: {len(event_items)}')
-                ret_str_list.append(f'({cs}) 할인 행사 제품 개수: {len(event_items)}\n')
+                print(f'{cs} 할인 행사 제품 개수: {len(event_items)}')
+                ret_str_list.append(f'{cs} 할인 행사 제품 개수: {len(event_items)}\n')
                 extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
 
         except ValueError as valueError:
@@ -919,6 +921,6 @@ def emart24_crawling(cs, ret_dict):
     emart24_crawling_details(DISCOUNT_SCRIPT)
     emart24_crawling_details(GIFT_HREF)
 
-    ret_str_list.append(f'----------------------------<{cs}>----------------------------')
+    ret_str_list.append(f'----------------------------{cs} End----------------------------')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
