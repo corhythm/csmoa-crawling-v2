@@ -99,6 +99,8 @@ def extract_first10_last10(ret_str_list, event_items, dum_event_items=None):
             if dum_event_items is not None:
                 ret_str_list.append(f'(덤) {i}: {dum_event_items[i]}\n')
 
+    ret_str_list.append('----------------------------------------------------------')
+
 
 def cu_crawling(cs, ret_dict):
     driver = webdriver.Chrome(executable_path=path, options=options)
@@ -190,7 +192,7 @@ def cu_crawling(cs, ret_dict):
     cu_plus_event_item_crawling("1+1")
     cu_plus_event_item_crawling("2+1")
     ret_str_list.append(
-        f'\n<h3><b>--------------------------------------------------------{cs} End--------------------------------------------------------</b></h3>\n\n')
+        f'\n<h3><b>============================={cs} End=============================</b></h3>\n\n')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -355,7 +357,7 @@ def gs25_crawling(cs, ret_dict):
     gs25_gift_event_item_crawling()  # 덤증정(파라미터 원래 없음)
 
     ret_str_list.append(
-        f'\n<h3><b>--------------------------------------------------------{cs} End--------------------------------------------------------</b></h3>\n\n')
+        f'\n<h3><b>============================={cs} End=============================</b></h3>\n\n')
     ret_dict[cs] = ''.join(ret_str_list)
 
     driver.quit()  # 크롬에서 열려있는 모든 탭 종료
@@ -572,7 +574,7 @@ def seven_eleven_crawling(cs, ret_dict):
     seven_eleven_plus_and_discount_event_item_crawling(DISCOUNT)
 
     ret_str_list.append(
-        f'\n<h3><b>--------------------------------------------------------{cs} End--------------------------------------------------------</b></h3>')
+        f'\n<h3><b>============================={cs} End=============================</b></h3>')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -777,7 +779,7 @@ def ministop_crawling(cs, ret_dict):
     ministop_gift_event_item_crawling(GIFT_HREF)
 
     ret_str_list.append(
-        f'\n<h3><b>--------------------------------------------------------{cs} End--------------------------------------------------------</b></h3>')
+        f'\n<h3><b>============================={cs} End=============================</b></h3>')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -903,7 +905,7 @@ def emart24_crawling(cs, ret_dict):
                 extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items)
             elif page_type_script == GIFT_HREF:
                 print(f'{cs} 3+1 행사 제품 개수: {len(dum_event_items)}')
-                ret_str_list.append(f'\n<h3><b>{cs} 덩증정 행사 제품 개수: {len(dum_event_items)}</b></h3>\n')
+                ret_str_list.append(f'\n<h3><b>{cs} 덤증정 행사 제품 개수: {len(dum_event_items)}</b></h3>\n')
                 extract_first10_last10(ret_str_list=ret_str_list, event_items=event_items,
                                        dum_event_items=dum_event_items)
             else:
@@ -928,6 +930,6 @@ def emart24_crawling(cs, ret_dict):
     emart24_crawling_details(GIFT_HREF)
 
     ret_str_list.append(
-        f'<h3><b>--------------------------------------------------------{cs} End--------------------------------------------------------</b></h3>')
+        f'<h3><b>============================={cs} End=============================</b></h3>')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
