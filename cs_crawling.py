@@ -99,7 +99,7 @@ def extract_first10_last10(ret_str_list, event_items, dum_event_items=None):
             if dum_event_items is not None:
                 ret_str_list.append(f'(덤) {i}: {dum_event_items[i]}\n')
 
-    ret_str_list.append('----------------------------------------------------------')
+    ret_str_list.append('\n\n<h4><b>----------------------------------------------------------------------------------</b></h4>\n')
 
 
 def cu_crawling(cs, ret_dict):
