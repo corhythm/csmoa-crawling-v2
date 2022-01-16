@@ -20,7 +20,8 @@ if platform.system() != 'Windows':
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--window-size=1920, 1080')
-options.add_argument("--disable-gpu")
+options.add_argument('--disable-gpu')
+options.add_argument('--remote-debugging-port=9222')
 options.add_argument(f'user-agent={user_agent}')
 
 path = 'chromedriver_win32.exe' if platform.system() == 'Windows' else os.path.abspath("chromedriver")
@@ -192,7 +193,7 @@ def cu_crawling(cs, ret_dict):
     cu_plus_event_item_crawling("1+1")
     cu_plus_event_item_crawling("2+1")
     ret_str_list.append(
-        f'\n<h3><b>============================={cs} End=============================</b></h3>\n\n')
+        f'\n<h3><b>============================={cs}_End=============================</b></h3>\n\n')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -357,7 +358,7 @@ def gs25_crawling(cs, ret_dict):
     gs25_gift_event_item_crawling()  # 덤증정(파라미터 원래 없음)
 
     ret_str_list.append(
-        f'\n<h3><b>============================={cs} End=============================</b></h3>\n\n')
+        f'\n<h3><b>============================={cs}_End=============================</b></h3>\n\n')
     ret_dict[cs] = ''.join(ret_str_list)
 
     driver.quit()  # 크롬에서 열려있는 모든 탭 종료
@@ -574,7 +575,7 @@ def seven_eleven_crawling(cs, ret_dict):
     seven_eleven_plus_and_discount_event_item_crawling(DISCOUNT)
 
     ret_str_list.append(
-        f'\n<h3><b>============================={cs} End=============================</b></h3>')
+        f'\n<h3><b>============================={cs}_End=============================</b></h3>')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -779,7 +780,7 @@ def ministop_crawling(cs, ret_dict):
     ministop_gift_event_item_crawling(GIFT_HREF)
 
     ret_str_list.append(
-        f'\n<h3><b>============================={cs} End=============================</b></h3>')
+        f'\n<h3><b>============================={cs}_End=============================</b></h3>')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()
 
@@ -930,6 +931,6 @@ def emart24_crawling(cs, ret_dict):
     emart24_crawling_details(GIFT_HREF)
 
     ret_str_list.append(
-        f'<h3><b>============================={cs} End=============================</b></h3>')
+        f'<h3><b>============================={cs}_End=============================</b></h3>')
     ret_dict[cs] = ''.join(ret_str_list)
     driver.quit()

@@ -9,6 +9,11 @@ from pytz import timezone
 import cs_crawling
 from github_utils import get_github_repo, upload_github_issue
 
+try:
+    import secret
+except ModuleNotFoundError:
+    pass
+
 if __name__ == '__main__':
     print('Start Crawling!')
     start_time = time.time()
@@ -19,7 +24,7 @@ if __name__ == '__main__':
     css = {'cu': cs_crawling.cu_crawling, 'gs25': cs_crawling.gs25_crawling,
            'seven_eleven: ': cs_crawling.seven_eleven_crawling, 'ministop': cs_crawling.ministop_crawling,
            'emart24': cs_crawling.emart24_crawling}  # Convenience Stores
-    # css = {'ministop': cs_crawling.ministop_crawling}  # test
+    
     jobs = []
 
     for cs_key in css.keys():
@@ -31,7 +36,7 @@ if __name__ == '__main__':
         process.join()
 
     if platform.system() != 'Windows':  # 깃허브 이슈에 업로드(깃허브 액션에서 실행될 경우에만 실행)
-        access_token = os.environ['MY_GITHUB_TOKEN']
+        access_token = secret.MY_GITHUB_TOKEN if os.path.isfile('secret.py') else os.environ['MY_GITHUB_TOKEN']
         repository_name = 'csmoa-crawling-v2'
         seoul_timezone = timezone('Asia/Seoul')
         today = datetime.now(seoul_timezone).strftime('%Y년 %m월 %d일 %H:%M:%S')
