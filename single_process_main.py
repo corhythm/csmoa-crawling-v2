@@ -19,11 +19,13 @@ if __name__ == '__main__':
     start_time = time.time()
 
     ret_dict = {'cu': '', 'gs25': '', 'seven_eleven': '', 'ministop': '', 'emart24': ''}
-    #cs_crawling.cu_crawling('cu', ret_dict)
-    #cs_crawling.gs25_crawling('gs25', ret_dict)
+    
+    cs_crawling.seven_eleven_crawling('seven_eleven', ret_dict)
+    cs_crawling.cu_crawling('cu', ret_dict)
+    cs_crawling.gs25_crawling('gs25', ret_dict)
     #cs_crawling.seven_eleven_crawling('seven_eleven', ret_dict)
     cs_crawling.ministop_crawling('ministop', ret_dict)
-    #cs_crawling.emart24_crawling('emart24', ret_dict)
+    cs_crawling.emart24_crawling('emart24', ret_dict)
     
 
     if platform.system() != 'Windows':  # 깃허브 이슈에 업로드(깃허브 액션에서 실행될 경우에만 실행)
